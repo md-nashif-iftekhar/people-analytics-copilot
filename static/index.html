@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>People Analytics · HR Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand-dot"></div>
+  <div class="brand-name">People Analytics</div>
+  <div class="api-badge" id="apiBadge"><div class="api-dot"></div><span id="apiLabel">Connecting…</span></div>
+</div>
+
+<!-- SHELL -->
+<div class="shell">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="nav-group">
+    <div class="nav-group-label">Overview</div>
+    <button class="nav-item active" data-page="dashboard" onclick="nav(this,'dashboard')">
+      <span class="nav-icon">◈</span> Dashboard
+    </button>
+    <button class="nav-item" data-page="upload" onclick="nav(this,'upload')">
+      <span class="nav-icon">⬆</span> Upload Data
+    </button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">People</div>
+    <button class="nav-item" data-page="performance" onclick="nav(this,'performance')">
+      <span class="nav-icon">▲</span> Performance
+    </button>
+    <button class="nav-item" data-page="wellbeing" onclick="nav(this,'wellbeing')">
+      <span class="nav-icon">◇</span> Well-Being
+    </button>
+    <button class="nav-item" data-page="recommender" onclick="nav(this,'recommender')">
+      <span class="nav-icon">◎</span> Recommender
+    </button>
+    <button class="nav-item" data-page="social" onclick="nav(this,'social')">
+      <span class="nav-icon">▦</span> Social
+    </button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Operations</div>
+    <button class="nav-item" data-page="workforce" onclick="nav(this,'workforce')">
+      <span class="nav-icon">⏱</span> Workforce
+    </button>
+    <button class="nav-item" data-page="recruitment" onclick="nav(this,'recruitment')">
+      <span class="nav-icon">⬡</span> Recruitment
+    </button>
+    <button class="nav-item" data-page="turnover" onclick="nav(this,'turnover')">
+      <span class="nav-icon">↺</span> Turnover
+    </button>
+    <button class="nav-item" data-page="risk" onclick="nav(this,'risk')">
+      <span class="nav-icon">⚠</span> Risk
+    </button>
+    <button class="nav-item" data-page="compare" onclick="nav(this,'compare')">
+      <span class="nav-icon">≡</span> Compare
+    </button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">AI Copilot</div>
+    <button class="nav-item" data-page="copilot" onclick="nav(this,'copilot')">
+      <span class="nav-icon">💬</span> Copilot
+    </button>
+  </div>
+  <div class="sidebar-spacer"></div>
+  <div class="sidebar-footer">HR Analytics v2</div>
+</nav>
+
+<div class="content" id="mainContent">
+
+<!-- ═══════════════════════════════ UPLOAD ═════════════════════ -->
+<div class="page" id="page-upload">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Data <em>Upload</em></div>
+      <div class="page-sub">Drag and drop CSV datasets — all analytics modules update automatically</div>
+    </div>
+  </div>
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <input type="file" id="fileInput" accept=".csv" multiple style="display:none" onchange="uploadFiles(this.files)">
+    <div class="drop-icon">⬆</div>
+    <div class="drop-title">Drop CSV files here</div>
+    <div class="drop-sub">or click to browse · supports any HR dataset</div>
+  </div>
+  <div id="uploadMsg"></div>
+  <div class="card">
+    <div class="card-title">Manual Entry</div>
+    <div class="form-tabs">
+      <button class="form-tab active" data-tab="turnover"    onclick="switchFormTab('turnover')">Turnover</button>
+      <button class="form-tab"        data-tab="wellbeing"   onclick="switchFormTab('wellbeing')">Well-Being</button>
+      <button class="form-tab"        data-tab="recruitment" onclick="switchFormTab('recruitment')">Recruitment</button>
+    </div>
+    <div id="manualFormBody"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Available Datasets</div>
+    <div id="datasetList"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ DASHBOARD ══════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Platform <em>Dashboard</em></div>
+      <div class="page-sub">Live overview across all analytics modules</div>
+    </div>
+  </div>
+  <div id="dashContent"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+</div>
+
+<!-- ═══════════════════════════════ COPILOT ═══════════════════ -->
+<div class="page" id="page-copilot">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">AI <em>Copilot</em></div>
+      <div class="page-sub">Ask HR questions in natural language and get answers from live analytics.</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="loadCopilot()">Reset Chat</button>
+    </div>
+  </div>
+  <div class="card" style="padding:0;">
+    <div id="copilotChat" style="min-height:320px;padding:18px;background:rgba(15,23,42,0.95);border-radius:12px;display:flex;flex-direction:column;gap:12px;overflow:auto;">
+      <div class="chat-message bot"><strong>Copilot</strong>: Ask me for turnover insights, burnout risks, department work-life balance, or staffing projections.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctrl" style="gap:12px;flex-wrap:wrap">
+      <input id="copilotQuery" placeholder="Type your question here..." style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter') sendCopilotQuery()">
+      <button class="btn btn-primary btn-sm" onclick="sendCopilotQuery()">Ask Copilot</button>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="sendCopilotQuick('Why is turnover increasing?')">Why is turnover increasing?</button>
+      <button class="btn btn-sm" onclick="sendCopilotQuick('Which employees are burnout risks?')">Burnout risks</button>
+      <button class="btn btn-sm" onclick="sendCopilotQuick('Show departments with poor work-life balance.')">Poor work-life balance</button>
+      <button class="btn btn-sm" onclick="sendCopilotQuick('Predict next quarter staffing shortages.')">Staffing shortages</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ REPORTS ═══════════════════ -->
+<div class="page" id="page-reports">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Reports <em>Generation</em></div>
+      <div class="page-sub">Generate executive summaries and downloadable PDF reports</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="generateReport()">Generate Now</button>
+      <button class="btn btn-sm" onclick="downloadLatest()">Download Latest</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Saved Reports</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="reportsList" style="min-width:320px"></select>
+      <button class="btn btn-sm" onclick="downloadSelected()">Download</button>
+      <button class="btn btn-sm" onclick="refreshReports()">Refresh</button>
+    </div>
+    <div id="reportsMsg" style="margin-top:8px"></div>
+  </div>
+</div>
+<!-- ═══════════════════════════════ WORKFORCE ══════════════════ -->
+<div class="page" id="page-workforce">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Workforce <em>Planning</em></div>
+      <div class="page-sub">Shift optimization · demand heatmap · cost analysis · alerts</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="wfLoad('full')">Full Analysis</button>
+      <button class="btn btn-sm" onclick="wfLoad('heatmap')">Heatmap</button>
+      <button class="btn btn-sm" onclick="wfLoad('alerts')">Alerts</button>
+      <button class="btn btn-sm" onclick="wfLoad('optimize')">Optimize</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <span class="ctrl-label">Service Level</span>
+    <input type="number" id="wfSL" value="4" min="1" max="20" style="width:64px" onchange="wfLoad(window._wfView||'full')">
+    <span class="ctrl-label" style="margin-left:8px">patients / staff / hr</span>
+    <span class="ctrl-label" style="margin-left:16px">Budget EUR/day</span>
+    <input type="number" id="wfBudget" value="300" min="50" max="2000" style="width:80px" onchange="wfLoad(window._wfView||'full')">
+  </div>
+  <div id="wfContent"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+</div>
+
+<!-- ═══════════════════════════════ RECRUITMENT ════════════════ -->
+<div class="page" id="page-recruitment">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Recruitment <em>Analytics</em></div>
+      <div class="page-sub">Association rule mining · qualification patterns · hiring bias detection</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="recLoad()">Mine Rules</button>
+      <button class="btn btn-sm" onclick="recLoadBias()">Bias Analysis</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <span class="ctrl-label">Target Role</span>
+    <select id="recTarget">
+      <option value="critical_care_nursing">Critical Care Nursing</option>
+      <option value="family_nurse">Family Nurse</option>
+      <option value="occupational_health_nursing">Occupational Health</option>
+      <option value="gerontological_nursing">Gerontological</option>
+    </select>
+    <span class="ctrl-label" style="margin-left:8px">Min Support</span>
+    <input type="number" id="recSupp" value="0.05" min="0.01" max="1" step="0.01" style="width:68px">
+    <span class="ctrl-label">Confidence</span>
+    <input type="number" id="recConf" value="0.5" min="0.1" max="1" step="0.05" style="width:68px">
+  </div>
+  <div id="recContent"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+</div>
+
+<!-- ═══════════════════════════════ RECOMMENDER ════════════════ -->
+<div class="page" id="page-recommender">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Employee <em>Recommender</em></div>
+      <div class="page-sub">Cosine similarity · mentor matching · team clusters · similarity matrix</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="empRec('onboarding_buddy')">🤝 Buddy</button>
+      <button class="btn btn-sm" onclick="empRec('mentor')">⭐ Mentor</button>
+      <button class="btn btn-sm" onclick="empRec('teammate')">👥 Teammate</button>
+      <button class="btn btn-sm" onclick="empRecTeams()">◈ Teams</button>
+      <button class="btn btn-sm" onclick="empRecMatrix()">▦ Matrix</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <span class="ctrl-label">Employee</span>
+    <select id="empId"></select>
+    <span class="ctrl-label" style="margin-left:8px">Top N</span>
+    <input type="number" id="topN" value="5" min="1" max="10" style="width:60px">
+  </div>
+  <div id="empContent"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+</div>
+
+<!-- SOCIAL GRAPH PAGE -->
+<div class="page" id="page-social">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Social <em>Graph</em></div>
+      <div class="page-sub">Visualize employee relationships, influencers, and isolates</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="loadSocial()">Refresh</button>
+      <button class="btn btn-sm" onclick="window.open('/api/social/graph.png','_blank')">Open Image</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Graph</div>
+    <div style="height:520px;display:flex;align-items:center;justify-content:center">
+      <img id="socialGraphImg" src="/api/social/graph.png" alt="Social Graph" style="max-width:100%;max-height:100%">
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:12px">
+    <div class="card"><div class="card-title">Isolated Employees</div><div id="isolatedList">Loading…</div></div>
+    <div class="card"><div class="card-title">Top Influencers</div><div id="influencerList">Loading…</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ PERFORMANCE ════════════════ -->
+<div class="page" id="page-performance">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Performance <em>Predictions</em></div>
+      <div class="page-sub">High performer · burnout risk · productivity score · per-employee analytics</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="perfLoad('pred')">Predictions</button>
+      <button class="btn btn-sm" onclick="perfLoad('eda')">EDA</button>
+      <button class="btn btn-sm" onclick="perfLoad('corr')">Correlation</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <span class="ctrl-label">Model</span>
+    <select id="perfModel">
+      <option value="random_forest">Random Forest</option>
+      <option value="svm">SVM</option>
+      <option value="mlp">Neural Network</option>
+    </select>
+    <span class="ctrl-label" style="margin-left:8px">Test Split</span>
+    <input type="number" id="perfSplit" value="0.2" min="0.1" max="0.4" step="0.05" style="width:68px">
+    <button class="btn btn-sm" onclick="perfLoad('train')">Train ML Model</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Quick Predictions</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px">
+        <div style="margin-bottom:8px"><strong>Employee Retention / Performance</strong></div>
+        <input id="predEmpNumber" placeholder="EmpNumber (e.g. E1001000)" style="width:100%" />
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-sm" onclick="uiPredictRetention()">Predict Retention</button>
+          <button class="btn btn-sm" onclick="uiPredictPerformance()">Predict Performance</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-ghost btn-sm" onclick="trainPersistModels()">Train &amp; Save Models</button>
+        </div>
+        <div id="predEmpResult" style="margin-top:8px">No prediction run yet.</div>
+      </div>
+      <div style="flex:1;min-width:280px">
+        <div style="margin-bottom:8px"><strong>Candidate Fit / Culture</strong></div>
+        <input id="candTeam" placeholder="Target Team (team_03)" style="width:100%;margin-bottom:6px" />
+        <input id="candExp" placeholder="Experience (free text)" style="width:100%;margin-bottom:6px" />
+        <input id="candHobbies" placeholder="Hobbies (comma-separated)" style="width:100%;margin-bottom:6px" />
+        <input id="candSkills" placeholder="Skills (comma-separated)" style="width:100%;margin-bottom:6px" />
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn btn-sm" onclick="uiCandidateFit()">Candidate Fit</button>
+          <button class="btn btn-sm" onclick="uiCultureFit()">Culture Fit</button>
+        </div>
+        <div id="predCandResult" style="margin-top:8px">No prediction run yet.</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Policy Scenario Simulator</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:250px">
+        <label class="form-label">Salary Increase (%)</label>
+        <input id="scenarioSalary" type="number" min="0" step="1" value="0" style="width:100%" />
+      </div>
+      <div style="flex:1;min-width:250px">
+        <label class="form-label">Overtime Reduction (%)</label>
+        <input id="scenarioOvertime" type="number" min="0" max="100" step="1" value="0" style="width:100%" />
+      </div>
+      <div style="flex:1;min-width:250px">
+        <label class="form-label">Remote Work Policy</label>
+        <select id="scenarioRemote" style="width:100%">
+          <option value="none">None</option>
+          <option value="hybrid">Hybrid</option>
+          <option value="remote">Remote</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="uiScenarioPredict()">Run Scenario</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetScenarioInputs()">Reset</button>
+    </div>
+    <div id="scenarioResult" style="margin-top:12px">No scenario run yet.</div>
+  </div>
+  <div id="perfContent"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+</div>
+
+<!-- ═══════════════════════════════ WELLBEING ══════════════════ -->
+<div class="page" id="page-wellbeing">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Well-Being <em>Analysis</em></div>
+      <div class="page-sub">Stress patterns · gender comparison · WLB drivers · regression model</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="wbLoad('deep')">Full Analysis</button>
+      <button class="btn btn-sm" onclick="wbLoad('corr')">Correlation</button>
+      <button class="btn btn-sm" onclick="wbLoad('train')">Train Model</button>
+    </div>
+  </div>
+  <div id="wbContent"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+</div>
+
+<!-- ═══════════════════════════════ TURNOVER ═══════════════════ -->
+<div class="page" id="page-turnover">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Turnover <em>Prediction</em></div>
+      <div class="page-sub">Logistic Regression · Random Forest · XGBoost · per-employee attrition probability</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="tvLoad('compare')">Compare Models</button>
+      <button class="btn btn-sm" onclick="tvLoad('eda')">EDA</button>
+      <button class="btn btn-sm" onclick="tvLoad('risk')">Risk Profile</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <span class="ctrl-label">Train Model</span>
+    <select id="tvModel">
+      <option value="random_forest">Random Forest</option>
+      <option value="logistic_regression">Logistic Regression</option>
+      <option value="xgboost">XGBoost</option>
+    </select>
+    <button class="btn btn-sm" onclick="tvLoad('train')">Train &amp; Predict</button>
+  </div>
+  <div id="tvContent"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+</div>
+
+<!-- ═══════════════════════════════ COMPARE ═══════════════════ -->
+<div class="page" id="page-compare">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Compare <em>Insights</em></div>
+      <div class="page-sub">Department, team, and manager comparisons across turnover, performance, engagement, and operational risk.</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="loadCompare()">Refresh Comparison</button>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Department Comparison</div>
+      <div id="compareDepartments">Loading…</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Team Comparison</div>
+      <div id="compareTeams">Loading…</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">Manager Comparison</div>
+    <div id="compareManagers">Loading…</div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">Actionable Insights</div>
+    <div id="compareInsights">Loading…</div>
+  </div>
+</div>
+
+<!-- RISK PAGE TEMPLATE -->
+<div class="page" id="page-risk" style="display:none">
+  <div class="page-hd">
+    <div class="page-hd-left">
+      <div class="page-title">Risk <em>Detection</em></div>
+      <div class="page-sub">Burnout, Quiet Quitting, Turnover Risk, Productivity Decline and Team Risk</div>
+    </div>
+    <div class="page-actions">
+      <button class="btn btn-primary btn-sm" onclick="loadRisk()">Refresh</button>
+      <button class="btn btn-sm" onclick="generateReport()">Export Risk PDF</button>
+    </div>
+  </div>
+  <div class="grid-3" style="gap:12px">
+    <div class="card"><div class="card-title">Burnout</div><div id="riskBurnout">Loading…</div></div>
+    <div class="card"><div class="card-title">Quiet Quitting</div><div id="riskQuiet">Loading…</div></div>
+    <div class="card"><div class="card-title">Turnover Risk</div><div id="riskTurnover">Loading…</div></div>
+  </div>
+  <div class="grid-3" style="margin-top:12px;gap:12px">
+    <div class="card"><div class="card-title">Productivity Decline</div><div id="riskProd">Loading…</div></div>
+    <div class="card"><div class="card-title">Toxic Teams</div><div id="riskToxic">Loading…</div></div>
+    <div class="card"><div class="card-title">Overworked</div><div id="riskOverworked">Loading…</div></div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">Employee Risk Lookup</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="empIdInput" placeholder="Enter EmpNumber (e.g. E1001000)" style="width:320px">
+      <button class="btn btn-sm" onclick="employeeRisk()">Lookup</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('empIdInput').value=''">Clear</button>
+    </div>
+    <div id="empRiskResult" style="margin-top:12px">No lookup performed yet.</div>
+  </div>
+</div>
+</div><!-- /content -->
+</div><!-- /shell -->
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/workforce.js"></script>
+<script src="/static/js/recruitment.js"></script>
+<script src="/static/js/recommender.js"></script>
+<script src="/static/js/performance.js"></script>
+<script src="/static/js/wellbeing.js"></script>
+<script src="/static/js/turnover.js"></script>
+</body>
+</html>

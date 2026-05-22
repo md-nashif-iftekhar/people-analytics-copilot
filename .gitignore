@@ -1,0 +1,54 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Env files
+.env
+.venv/
+venv/
+ENV/
+env/
+.Python
+
+# Pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# VS Code
+.vscode/
+
+# JetBrains
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local database files
+*.sqlite3
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python virtual environments
+pip-wheel-metadata/
+htmlcov/
+coverage.xml
+
+# Static build output
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
